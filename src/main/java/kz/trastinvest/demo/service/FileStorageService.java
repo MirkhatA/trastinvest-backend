@@ -28,6 +28,36 @@ public class FileStorageService {
         String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
         try (InputStream is = file.getInputStream()) {
+
+            boolean bucketExists = minioClient.bucketExists(
+                    io.minio.BucketExistsArgs.builder().bucket(bucket).build()
+            );
+
+            if (!bucketExists) {
+                minioClient.makeBucket(
+                        io.minio.MakeBucketArgs.builder().bucket(bucket).build()
+                );
+
+                String policy = "{\n" +
+                        "  \"Version\":\"2012-10-17\",\n" +
+                        "  \"Statement\":[\n" +
+                        "    {\n" +
+                        "      \"Effect\":\"Allow\",\n" +
+                        "      \"Principal\":\"*\",\n" +
+                        "      \"Action\":[\"s3:GetObject\"],\n" +
+                        "      \"Resource\":[\"arn:aws:s3:::" + bucket + "/*\"]\n" +
+                        "    }\n" +
+                        "  ]\n" +
+                        "}";
+
+                minioClient.setBucketPolicy(
+                        io.minio.SetBucketPolicyArgs.builder()
+                                .bucket(bucket)
+                                .config(policy)
+                                .build()
+                );
+            }
+
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
@@ -36,8 +66,10 @@ public class FileStorageService {
                             .contentType(file.getContentType())
                             .build()
             );
+
         } catch (Exception e) {
             log.warn("File upload failed", e);
+            throw new RuntimeException("File upload failed", e);
         }
 
         return publicUrl + "/" + fileName;

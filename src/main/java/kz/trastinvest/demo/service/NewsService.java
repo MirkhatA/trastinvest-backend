@@ -18,6 +18,7 @@ public class NewsService {
     private final NewsRepository newsRepository;
 
     public News create(NewsRequest request) {
+        log.info("News request: {}", request);
         News news = new News();
         news.setTitle(request.getTitle());
         news.setContent(request.getContent());
