@@ -11,12 +11,13 @@ import kz.trastinvest.demo.dto.response.ProductResponse;
 import kz.trastinvest.demo.service.FileStorageService;
 import kz.trastinvest.demo.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/product")
@@ -33,14 +34,15 @@ public class ProductController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> createProduct(
             @Parameter(
-                    description = "Product JSON, example:\n" +
-                            "{\n" +
-                            "  \"name\": \"Sneakers\",\n" +
-                            "  \"manufacturer\": \"Nike\",\n" +
-                            "  \"description\": \"Comfortable running shoes\",\n" +
-                            "  \"categoryId\": 1,\n" +
-                            "  \"deliveryType\": \"DELIVERY\"\n" +
-                            "}",
+                    description = """
+                            Product JSON, example:
+                            {
+                              "name": "Sneakers",
+                              "manufacturer": "Nike",
+                              "description": "Comfortable running shoes",
+                              "categoryId": 1,
+                              "deliveryType": "DELIVERY"
+                            }""",
                     required = true)
             @RequestPart("data") String json,
 
@@ -66,14 +68,15 @@ public class ProductController {
             @PathVariable Long id,
 
             @Parameter(
-                    description = "Product JSON, example:\n" +
-                            "{\n" +
-                            "  \"name\": \"Updated name\",\n" +
-                            "  \"manufacturer\": \"Adidas\",\n" +
-                            "  \"description\": \"New description\",\n" +
-                            "  \"categoryId\": 2,\n" +
-                            "  \"deliveryType\": \"PICKUP\"\n" +
-                            "}",
+                    description = """
+                            Product JSON, example:
+                            {
+                              "name": "Updated name",
+                              "manufacturer": "Adidas",
+                              "description": "New description",
+                              "categoryId": 2,
+                              "deliveryType": "PICKUP"
+                            }""",
                     required = true)
             @RequestPart("data") String json,
 
@@ -104,14 +107,20 @@ public class ProductController {
     }
 
     @GetMapping("/getAllProducts")
-    public ResponseEntity<List<ProductResponse>> getAll() {
-        return ResponseEntity.ok(productService.getAll());
+    public ResponseEntity<Page<ProductResponse>> getAll(@PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(productService.getAll(pageable));
     }
 
     @GetMapping("/getFilteredProducts")
-    public ResponseEntity<List<ProductResponse>> getFiltered(
+    public ResponseEntity<Page<ProductResponse>> getFiltered(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId) {
-        return ResponseEntity.ok(productService.getFilteredProducts(keyword, categoryId));
+            @RequestParam(required = false) Long categoryId,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(productService.getFilteredProducts(keyword, categoryId, pageable));
+    }
+
+    @GetMapping("/getProductCount")
+    public ResponseEntity<Long> getProductCount() {
+        return ResponseEntity.ok(productService.getProductCount());
     }
 }

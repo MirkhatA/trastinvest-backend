@@ -8,9 +8,8 @@ import kz.trastinvest.demo.repositories.CategoryRepository;
 import kz.trastinvest.demo.repositories.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -40,25 +39,20 @@ public class ProductService {
         return toDto(product);
     }
 
-    public List<ProductResponse> getAll() {
-        return productRepository.findAll()
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+    public Page<ProductResponse> getAll(Pageable pageable) {
+        return productRepository.findAll(pageable)
+                .map(this::toDto);
     }
 
-    public List<ProductResponse> getFilteredProducts(String keyword, Long categoryId) {
-        List<Product> products;
+
+    public Page<ProductResponse> getFilteredProducts(String keyword, Long categoryId, Pageable pageable) {
         if (keyword != null) {
-            products = productRepository.findByNameContainingIgnoreCase(keyword);
+            return productRepository.findByNameContainingIgnoreCase(keyword, pageable).map(this::toDto);
         } else if (categoryId != null) {
-            products = productRepository.findByCategory_Id(categoryId);
+            return productRepository.findByCategory_Id(categoryId, pageable).map(this::toDto);
         } else {
-            products = productRepository.findAll();
+            return productRepository.findAll(pageable).map(this::toDto);
         }
-        return products.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
     }
 
     private Product mapRequestToProduct(ProductRequest request, Product product) {
@@ -94,5 +88,9 @@ public class ProductService {
         }
 
         return dto;
+    }
+
+    public long getProductCount() {
+        return productRepository.count();
     }
 }
